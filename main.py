@@ -357,9 +357,13 @@ async def process_file(request: ProcessFileRequest):
             }
             records.append((record_id, chunk_data["vector"], metadata))
 
-        # Upsert to Supabase vector collection
-        database_1.docs.upsert(records=records)
-        # Create index for better query performance
+        # Upsert to Supabase vector collection in batches to avoid large SQL statements
+        batch_size = 5
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+            database_1.docs.upsert(records=batch)
+
+        # Create index for better query performance (idempotent)
         database_1.docs.create_index()
         stored_count = len(records)
         
