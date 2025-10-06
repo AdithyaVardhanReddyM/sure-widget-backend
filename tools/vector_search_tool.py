@@ -1,10 +1,10 @@
 from crewai.tools import tool
 import sys
 import os
+import vecs
 
 # Add the root directory to the path to import from root level modules
 
-import database_1
 from file_processor import FileProcessor
 
 
@@ -16,6 +16,9 @@ def vector_search(query: str, agent_id: str, limit: int = 5) -> str:
     args: query is str and the query you want to search against, agent_id is provided by user, limit is the number of chunks you want
     """
     try:
+        vx = vecs.create_client(os.getenv("DB_CONNECTION"))
+        docs = vx.get_or_create_collection(name="embeddings", dimension=1024)
+
         # Initialize file processor to generate query embedding
         file_processor = FileProcessor()
 
@@ -23,7 +26,7 @@ def vector_search(query: str, agent_id: str, limit: int = 5) -> str:
         query_embedding = file_processor.generate_embeddings([query])[0]
 
         # Query the vector collection
-        results = database_1.docs.query(
+        results = docs.query(
             data=query_embedding,
             limit=limit,
             filters={"agentId": {"$eq": agent_id}},
@@ -31,6 +34,8 @@ def vector_search(query: str, agent_id: str, limit: int = 5) -> str:
             include_value=True,
             include_metadata=True
         )
+
+        vx.disconnect()
 
         if not results:
             return "No relevant context found."

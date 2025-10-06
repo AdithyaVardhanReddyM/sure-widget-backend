@@ -1,18 +1,15 @@
 import os
 import uuid
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from dotenv import load_dotenv
-from typing import List
 import httpx
-from contextlib import asynccontextmanager
+import vecs
 
 from crewai import Agent, Task, Crew, Process
 from crewai.llm import LLM
 
-import database_1
 from file_processor import FileProcessor
 from tools.vector_search_tool import vector_search
 from tools.stripe_mcp_tool import stripe_mcp
@@ -157,14 +154,8 @@ def email_builder_agent(prompt, research_insights):
         print(f"   ⚠️ Schema returned as string (not valid JSON): {e}")
         return schema
 
-# Lifespan for database readiness
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await database_1.wait_for_db()
-    yield
-
 # FastAPI app
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 # Initialize file processor
 file_processor = FileProcessor()
@@ -358,13 +349,16 @@ async def process_file(request: ProcessFileRequest):
             records.append((record_id, chunk_data["vector"], metadata))
 
         # Upsert to Supabase vector collection in batches to avoid large SQL statements
+        vx = vecs.create_client(os.getenv("DB_CONNECTION"))
+        docs = vx.get_or_create_collection(name="embeddings", dimension=1024)
         batch_size = 5
         for i in range(0, len(records), batch_size):
             batch = records[i:i + batch_size]
-            database_1.docs.upsert(records=batch)
+            docs.upsert(records=batch)
 
         # Create index for better query performance (idempotent)
-        database_1.docs.create_index()
+        docs.create_index()
+        vx.disconnect()
         stored_count = len(records)
         
         return ProcessFileResponse(
