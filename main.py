@@ -1,4 +1,6 @@
 import os
+os.environ["CREWAI_DISABLE_TRACE_PROMPT"] = "true"
+os.environ["CREWAI_ENABLE_TRACING"] = "false"
 import uuid
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
@@ -32,7 +34,6 @@ from cerebras.cloud.sdk import Cerebras
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 CAL_EVENT_URL = os.getenv("CAL_EVENT_URL")
-os.environ["CREWAI_DISABLE_TRACE_PROMPT"] = "true"
 
 async def fetch_doppler_secret(secret_name: str, agent_id: str) -> str:
     token = os.getenv("DOPPLER_TOKEN")
