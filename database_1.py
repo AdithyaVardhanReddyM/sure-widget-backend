@@ -10,7 +10,7 @@ docs = None
 
 def initialize_db():
     global vx, docs
-    vx = vecs.create_client(os.getenv("DB_CONNECTION"))
+    vx = vecs.create_client(os.getenv("DB_CONNECTION"), pool_pre_ping=True)
     docs = vx.get_or_create_collection(name="embeddings", dimension=1024)
     print(docs)
 
