@@ -256,7 +256,7 @@ async def chat(msg: Message):
         goal=goal,
         backstory=backstory,
         tools=tools_to_use,
-        verbose=True,
+        verbose=False,
         memory=True,
         llm=cerebras_llm,
     )
