@@ -260,6 +260,7 @@ async def chat(msg: Message):
         verbose=False,
         memory=True,
         llm=cerebras_llm,
+        tracing=False
     )
 
     # Tool configuration that MUST be respected by the agent when calling tools
